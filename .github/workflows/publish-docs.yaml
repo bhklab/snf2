@@ -1,31 +1,38 @@
 name: Publish MkDocs Documentation
+
 on:
-    push:
-        branches:
-            - main
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-    build-and-deploy:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
-              with:
-                  fetch-depth: 0
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
 
-            - name: Install Pixi
-              uses: prefix-dev/setup-pixi@v0.8.1
-              with:
-                  pixi-version: v0.46.0
-                  environments: docs
-                  activate-environment: true
+      - name: Install Pixi
+        uses: prefix-dev/setup-pixi@v0.10.1
+        with:
+          pixi-version: v0.77.0
+          environments: docs
+          cache: true
 
-            - name: Configure Git user
-              run: |
-                  git config --local user.email "github-actions[bot]@users.noreply.github.com"
-                  git config --local user.name "github-actions[bot]"
+      - name: Configure Git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
 
-            - name: Deploy Documentation Using Mike and Released Version
-              run: |
-                  mkdocs gh-deploy --force
+      - name: Deploy documentation
+        run: pixi run --locked -e docs docs-deploy

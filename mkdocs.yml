@@ -1,0 +1,17 @@
+site_name: SNF2
+site_url: https://bhklab.github.io/snf2/
+site_description: Package documentation for SNF2
+site_author: Michael Tran
+repo_url: https://github.com/bhklab/snf2
+repo_name: bhklab/snf2
+strict: true
+
+theme:
+  name: readthedocs
+
+nav:
+  - Home: index.md
+  - Developer Notes: devnotes.md
+
+plugins:
+  - search
