@@ -35,6 +35,7 @@ include = [
     "/README.md",
     "/pyproject.toml",
     "/src",
+    "/tests",
 ]
 
 [tool.ruff]
@@ -42,6 +43,10 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
+
+[tool.ty.environment]
+root = ["./src"]
+# python = ".pixi/envs/default/bin/python"
 
 [tool.pixi.workspace]
 name = "snf2"
@@ -68,6 +73,7 @@ docs = { features = ["docs"], solve-group = "default" }
 
 [tool.pixi.feature.dev.dependencies]
 python-build = ">=1.3,<2"
+pytest = ">=9.0,<10"
 ruff = ">=0.16,<0.17"
 ty = ">=0.0.72,<0.1"
 
@@ -76,8 +82,9 @@ format = { cmd = ["ruff", "format", "."], description = "Format Python files" }
 format-check = { cmd = ["ruff", "format", "--check", "."], description = "Check Python formatting" }
 lint = { cmd = ["ruff", "check", "."], description = "Lint Python files" }
 typecheck = { cmd = ["ty", "check"], description = "Type-check Python files" }
+test = { cmd = ["pytest"], description = "Run the test suite" }
 build = { cmd = ["python", "-m", "build"], description = "Build the source and wheel distributions" }
-check = { depends-on = ["format-check", "lint", "typecheck", "build"], description = "Run all non-mutating development checks" }
+check = { depends-on = ["format-check", "lint", "typecheck", "test", "build"], description = "Run all development checks" }
 
 [tool.pixi.feature.docs.dependencies]
 mkdocs = ">=1.6,<2"
