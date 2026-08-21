@@ -75,6 +75,32 @@
               
                 <h1 id="snf2">SNF2</h1>
 <p>SNF2 is a modern Python implementation of Similarity Network Fusion.</p>
+<p>The initial API separates affinity construction from network fusion:</p>
+<pre><code class="language-python">import numpy as np
+
+from snf2 import fuse, make_affinity
+
+rna = np.array([[0.0, 1.0], [0.2, 0.8], [1.0, 0.1], [0.9, 0.2]])
+protein = np.array([[1.0, 0.0], [0.8, 0.1], [0.1, 1.0], [0.2, 0.9]])
+
+networks = [
+    make_affinity(rna, n_neighbors=2),
+    make_affinity(protein, n_neighbors=2),
+]
+fused = fuse(networks, n_neighbors=2)
+</code></pre>
+<p>Each input must use rows for samples and columns for features. SNF2 performs no
+automatic feature standardization, sample alignment, or missing-value
+handling. Preprocess modalities and place samples in the same order before
+calling <code>make_affinity</code>.</p>
+<p><code>make_affinity</code> defaults to squared Euclidean distance and accepts every named
+metric supported by
+<a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html"><code>scipy.spatial.distance.pdist</code></a>.
+Metric-specific arguments such as Minkowski <code>p</code>, standardized Euclidean <code>V</code>,
+and Mahalanobis <code>VI</code> can be supplied through <code>metric_kwargs</code>. <code>fuse</code> requires
+at least two finite, nonnegative, symmetric affinity matrices with the same
+shape. Metric-specific data requirements follow SciPy; SNF2 rejects
+non-finite or negative pairwise distances before constructing affinities.</p>
 <p>For setup and development commands, see the
 <a href="https://github.com/bhklab/snf2#readme">project README</a>.</p>
               
@@ -129,5 +155,5 @@
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-08-20 14:52:23.169615+00:00
+Build Date UTC : 2026-08-21 04:22:11.463186+00:00
 -->
