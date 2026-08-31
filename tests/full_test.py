@@ -176,60 +176,60 @@ for moa in pd.unique(colData['Mechanism.of.Action']):
 k = 20
 name_to_view =  {"GEOM":GEOM, "LINCS":LINCS,"JUMP":JUMP,"NCI60":RESP}
 
-# all_combos = []
-# for i in range(2,len(name_to_view)+1):
-#     all_combos+=[x for x in list(combinations(name_to_view.keys(),i))]
+all_combos = []
+for i in range(2,len(name_to_view)+1):
+    all_combos+=[x for x in list(combinations(name_to_view.keys(),i))]
 
 
-# results = defaultdict(list)
-# for combo in all_combos:
-#     views = [name_to_view[x] for x in combo]
-#     affinities= []
-#     for view in combo:
-#         if view == 'NCI60':
-#             comp = 1- RESP.T.corr()
-#             aff = affinity_matrix(comp,k=k)
-#             affinities.append(aff)
-#         else:
-#             aff = make_affinity(name_to_view[view].values,n_neighbors=k)
-#             affinities.append(aff)
+results = defaultdict(list)
+for combo in all_combos:
+    views = [name_to_view[x] for x in combo]
+    affinities= []
+    for view in combo:
+        if view == 'NCI60':
+            comp = 1- RESP.T.corr()
+            aff = affinity_matrix(comp,k=k)
+            affinities.append(aff)
+        else:
+            aff = make_affinity(name_to_view[view].values,n_neighbors=k)
+            affinities.append(aff)
 
-#     # affinities = [make_affinity(x,K=k) for x in [view.values for view in views]]
+    # affinities = [make_affinity(x,K=k) for x in [view.values for view in views]]
 
-#     FUSED=fuse(affinities)
-#     # integrator = MultiViewIntegrator(
-#     #             views = views,
-#     #             view_names=combo,
-#     #                 metrics = ['sqeuclidean']*len(views),
-#     #                 neighborhood_size= k,
-#     #                 mu= 0.4,
-#     #                 alignment_epochs=500,
-#     #                 emb_dim = 10,
-#     #                 seed = 30)
-#     # embeds_final, S_final, model = integrator.neural_integration()
+    FUSED=fuse(affinities)
+    # integrator = MultiViewIntegrator(
+    #             views = views,
+    #             view_names=combo,
+    #                 metrics = ['sqeuclidean']*len(views),
+    #                 neighborhood_size= k,
+    #                 mu= 0.4,
+    #                 alignment_epochs=500,
+    #                 emb_dim = 10,
+    #                 seed = 30)
+    # embeds_final, S_final, model = integrator.neural_integration()
 
-#     for name, aff in zip(
-#         ['SNF'],
-#         [FUSED]):
-#         print(name)
+    for name, aff in zip(
+        ['SNF'],
+        [FUSED]):
+        print(name)
         
         
-#         fpr, tpr, thresh = metrics.roc_curve(X.values.flatten(), aff.flatten())
-#         auc = metrics.roc_auc_score(X.values.flatten(), aff.flatten())
+        fpr, tpr, thresh = metrics.roc_curve(X.values.flatten(), aff.flatten())
+        auc = metrics.roc_auc_score(X.values.flatten(), aff.flatten())
         
-#         results['Model'].append(name)
-#         results['Modalities'].append("+".join(combo))
-#         results['AUC'].append(auc)
-# results = pd.DataFrame(results)
-# print(results)
-# results.to_csv('ablation.csv')
+        results['Model'].append(name)
+        results['Modalities'].append("+".join(combo))
+        results['AUC'].append(auc)
+results = pd.DataFrame(results)
+print(results)
+results.to_csv('ablation.csv')
 
 
 
 # hyperparameter analysis
-# # umap moa clustering
-# # ADC pipeline and qc
-# # single modality 
+# umap moa clustering
+# ADC pipeline and qc
+# single modality 
 
 
 results = defaultdict(list)
