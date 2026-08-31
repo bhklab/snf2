@@ -106,3 +106,71 @@ def make_affinity(
         raise ValueError("affinity computation produced non-finite values")
 
     return affinities
+
+
+
+def affinity_matrix(
+    diff: np.ndarray,
+    n_neighbors: int = 20,
+    scale: float = 0.5,
+) -> np.ndarray:
+    """Construct a similarity/affinity network from a distance matrix.
+
+    Parameters
+    ----------
+    diff : np.ndarray
+        Square pairwise-difference/distance matrix.
+    n_neighbors : int, default=20
+        Number of nearest neighbors used to estimate local scale.
+    scale : float, default=0.5
+        Scaling factor for the Gaussian density.
+
+    Returns
+    -------
+    np.ndarray
+        Symmetric affinity matrix.
+    """
+    diff = np.asarray(diff, dtype=float)
+
+    if diff.ndim != 2 or diff.shape[0] != diff.shape[1]:
+        raise ValueError("diff must be a square matrix")
+
+    n = diff.shape[0]
+    eps = np.finfo(float).eps
+
+    # Symmetrize and remove self-distances.
+    diff = (diff + diff.T) / 2
+    np.fill_diagonal(diff, 0.0)
+
+    # For each column, sort distances and take the first k + 1 values.
+    # The +1 includes the diagonal zero.
+    sorted_columns = np.sort(diff, axis=0)
+
+    if k + 1 > n:
+        raise ValueError(f"k must satisfy k + 1 <= n (got k={k}, n={n})")
+
+    nearest = sorted_columns[:, : k + 1]
+
+    # R's mean(x[is.finite(x)]), applied row-wise.
+    finite = np.isfinite(nearest)
+    counts = finite.sum(axis=1)
+    means = np.divide(
+        np.where(finite, nearest, 0.0).sum(axis=1),
+        counts,
+        where=counts > 0,
+    )
+    means += eps
+
+    # Equivalent to:
+    # outer(means, means, avg) / 3 * 2 + Diff / 3 + eps
+    sig = (2.0 / 3.0) * ((means[:, None] + means[None, :]) / 2)
+    sig += diff / 3.0
+    sig += eps
+
+    sig = np.maximum(sig, eps)
+
+    # Gaussian density: dnorm(Diff, mean=0, sd=sigma * Sig)
+    densities = norm.pdf(diff, loc=0.0, scale=scale * sig)
+
+    # Ensure the resulting affinity matrix is symmetric.
+    return (densities + densities.T) / 2
