@@ -78,7 +78,7 @@
 <p>The initial API separates affinity construction from network fusion:</p>
 <pre><code class="language-python">import numpy as np
 
-from snf2 import fuse, make_affinity
+from snf2 import affinity_matrix, fuse, make_affinity
 
 rna = np.array([[0.0, 1.0], [0.2, 0.8], [1.0, 0.1], [0.9, 0.2]])
 protein = np.array([[1.0, 0.0], [0.8, 0.1], [0.1, 1.0], [0.2, 0.9]])
@@ -101,6 +101,21 @@ and Mahalanobis <code>VI</code> can be supplied through <code>metric_kwargs</cod
 at least two finite, nonnegative, symmetric affinity matrices with the same
 shape. Metric-specific data requirements follow SciPy; SNF2 rejects
 non-finite or negative pairwise distances before constructing affinities.</p>
+<p>Use <code>affinity_matrix</code> when distances have already been computed:</p>
+<pre><code class="language-python">distances = np.array(
+    [
+        [0.0, 0.3, 1.2, 1.0],
+        [0.3, 0.0, 1.0, 0.8],
+        [1.2, 1.0, 0.0, 0.2],
+        [1.0, 0.8, 0.2, 0.0],
+    ],
+)
+precomputed_network = affinity_matrix(distances, n_neighbors=2)
+</code></pre>
+<p>The input to <code>affinity_matrix</code> is a distance matrix, not a similarity matrix.
+Convert similarities with a transformation appropriate to the similarity
+measure first; for a similarity bounded to <code>[0, 1]</code>, that may be
+<code>1 - similarity</code>.</p>
 <p>For setup and development commands, see the
 <a href="https://github.com/bhklab/snf2#readme">project README</a>.</p>
               
@@ -155,5 +170,5 @@ non-finite or negative pairwise distances before constructing affinities.</p>
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-08-21 04:25:38.562075+00:00
+Build Date UTC : 2026-09-03 18:24:37.510481+00:00
 -->

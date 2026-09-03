@@ -83,9 +83,18 @@
 <p>This page will record implementation decisions and compatibility constraints
 that are important to future SNF2 contributors.</p>
 <h2 id="design-decisions">Design decisions</h2>
-<p>No entries yet.</p>
+<ul>
+<li><code>make_affinity</code> computes pairwise distances from sample-by-feature data and
+  delegates the shared SNF kernel to <code>affinity_matrix</code>.</li>
+<li><code>affinity_matrix</code> accepts precomputed distances rather than similarities, so
+  callers remain responsible for choosing a scientifically appropriate
+  similarity-to-distance transformation.</li>
+</ul>
 <h2 id="compatibility-notes">Compatibility notes</h2>
-<p>No entries yet.</p>
+<ul>
+<li>Missing-value handling belongs in preprocessing or in the distance
+  calculation. SNF2 does not define a generic <code>nan_policy</code> for SciPy metrics.</li>
+</ul>
 <h2 id="open-questions">Open questions</h2>
 <p>No entries yet.</p>
               
