@@ -1,0 +1,32 @@
+SNF2
+Copyright (c) 2026 BHKLab
+
+SNF2 is distributed under the MIT License. See LICENSE for the complete terms.
+
+Algorithm and implementation provenance
+---------------------------------------
+
+SNF2 implements Similarity Network Fusion and was informed by these reference
+implementations:
+
+- SNFpy by Ross Markello, commit
+  fd65e388a560dbe106ddd7b0c37599c0a499fb3e
+  https://github.com/rmarkello/snfpy
+  Reference file: snf/compute.py; source distribution license: LGPLv3.
+- SNFtool by Bo Wang, Aziz Mezlini, Feyyaz Demir, Marc Fiume, Zhuowen Tu,
+  Michael Brudno, Benjamin Haibe-Kains, and Anna Goldenberg, commit
+  64ade299d2cd10e6605063637fed1103564d0ea4
+  https://github.com/cran/SNFtool
+  Reference file: R/SNF.R; source distribution license: GPL.
+
+SNFtool is used as the numerical-behavior reference. SNFpy informed the Python
+API and implementation structure. Neither reference repository is bundled in
+the SNF2 distributions.
+
+Scientific citation
+-------------------
+
+Wang B, Mezlini AM, Demir F, Fiume M, Tu Z, Brudno M, Haibe-Kains B,
+Goldenberg A. Similarity network fusion for aggregating data types on a
+genomic scale. Nature Methods. 2014;11:333-337.
+https://doi.org/10.1038/nmeth.2810

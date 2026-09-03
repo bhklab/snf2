@@ -1,8 +1,15 @@
 # SNF2
 
-SNF2 is a modern Python implementation of Similarity Network Fusion.
+SNF2 is a modern Python implementation of Similarity Network Fusion for
+combining multiple data modalities into one sample-similarity network.
 
-The initial API separates affinity construction from network fusion:
+Install SNF2 with Python 3.12 or newer:
+
+```console
+pip install snf2
+```
+
+The API separates affinity construction from network fusion:
 
 ```python
 import numpy as np
@@ -51,6 +58,16 @@ The input to `affinity_matrix` is a distance matrix, not a similarity matrix.
 Convert similarities with a transformation appropriate to the similarity
 measure first; for a similarity bounded to `[0, 1]`, that may be
 `1 - similarity`.
+
+## Citation
+
+> Wang B, Mezlini AM, Demir F, Fiume M, Tu Z, Brudno M, Haibe-Kains B,
+> Goldenberg A. Similarity network fusion for aggregating data types on a
+> genomic scale. *Nature Methods*. 2014;11:333–337.
+> [doi:10.1038/nmeth.2810](https://doi.org/10.1038/nmeth.2810)
+
+Implementation provenance and pinned reference versions are documented in the
+[developer notes](devnotes.md).
 
 For setup and development commands, see the
 [project README](https://github.com/bhklab/snf2#readme).
