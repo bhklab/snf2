@@ -37,6 +37,47 @@ def as_feature_matrix(data: ArrayLike) -> NDArray[np.float64]:
     return matrix
 
 
+def as_distance_matrix(distances: ArrayLike) -> NDArray[np.float64]:
+    """Return a validated pairwise-distance matrix as an owned float64 array."""
+    try:
+        raw = np.asarray(distances)
+    except (TypeError, ValueError) as error:
+        raise TypeError("distances must be a rectangular real-valued array") from error
+
+    if raw.ndim != 2 or raw.shape[0] != raw.shape[1]:
+        raise ValueError("distances must be a square matrix")
+    if raw.shape[0] < 2:
+        raise ValueError("distances must contain at least two samples")
+    if not np.issubdtype(raw.dtype, np.number) or np.issubdtype(
+        raw.dtype, np.complexfloating
+    ):
+        raise TypeError("distances must contain real numeric values")
+
+    matrix = np.array(raw, dtype=np.float64, copy=True)
+    if not np.all(np.isfinite(matrix)):
+        raise ValueError("distances must contain only finite values")
+    if np.any(matrix < 0):
+        raise ValueError("distances must be nonnegative")
+    if not np.allclose(
+        matrix,
+        matrix.T,
+        rtol=SYMMETRY_RTOL,
+        atol=SYMMETRY_ATOL,
+    ):
+        raise ValueError("distances must be symmetric")
+    if not np.allclose(
+        np.diag(matrix),
+        0,
+        rtol=0,
+        atol=SYMMETRY_ATOL,
+    ):
+        raise ValueError("distances must have a zero diagonal")
+
+    matrix = np.asarray((matrix + matrix.T) / 2, dtype=np.float64)
+    np.fill_diagonal(matrix, 0)
+    return matrix
+
+
 def validate_n_neighbors(n_neighbors: int, n_samples: int) -> int:
     """Validate and return the requested neighborhood size."""
     if isinstance(n_neighbors, bool) or not isinstance(n_neighbors, Integral):

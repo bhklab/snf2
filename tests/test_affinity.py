@@ -5,8 +5,9 @@ from typing import Any, cast
 
 import numpy as np
 import pytest
+from scipy.spatial.distance import pdist, squareform
 
-from snf2 import make_affinity
+from snf2 import affinity_matrix, make_affinity
 
 DATA_DIR = Path(__file__).parent / "reference" / "data"
 REFERENCE_RTOL = 1e-10
@@ -78,6 +79,96 @@ def test_make_affinity_matches_snftool(features_name: str, affinity_name: str) -
         rtol=REFERENCE_RTOL,
         atol=REFERENCE_ATOL,
     )
+
+
+@pytest.mark.parametrize(
+    ("features_name", "affinity_name"),
+    [
+        ("features_1.csv", "affinity_1.csv"),
+        ("features_2.csv", "affinity_2.csv"),
+    ],
+)
+def test_affinity_matrix_matches_snftool(
+    features_name: str, affinity_name: str
+) -> None:
+    features = load_fixture(features_name)
+    distances = squareform(pdist(features, metric="euclidean"))
+    expected = load_fixture(affinity_name)
+
+    actual = affinity_matrix(
+        distances,
+        n_neighbors=3,
+        scale=0.5,
+    )
+
+    np.testing.assert_allclose(
+        actual,
+        expected,
+        rtol=REFERENCE_RTOL,
+        atol=REFERENCE_ATOL,
+    )
+
+
+def test_affinity_matrix_returns_owned_symmetric_float64_array() -> None:
+    distances = squareform(pdist(CONTINUOUS_DATA, metric="euclidean"))
+    original = distances.copy()
+
+    affinity = affinity_matrix(distances, n_neighbors=3)
+
+    np.testing.assert_array_equal(distances, original)
+    assert affinity.dtype == np.float64
+    assert affinity.shape == distances.shape
+    assert np.all(np.isfinite(affinity))
+    assert np.all(affinity > 0)
+    np.testing.assert_allclose(affinity, affinity.T, rtol=0, atol=0)
+    assert not np.shares_memory(affinity, distances)
+
+
+@pytest.mark.parametrize(
+    ("distances", "error", "message"),
+    [
+        ([0.0, 1.0], ValueError, "square"),
+        (np.zeros((2, 3)), ValueError, "square"),
+        (np.zeros((1, 1)), ValueError, "at least two"),
+        (np.array([[0.0, np.nan], [np.nan, 0.0]]), ValueError, "finite"),
+        (np.array([[0.0, np.inf], [np.inf, 0.0]]), ValueError, "finite"),
+        (np.array([[0.0, -1.0], [-1.0, 0.0]]), ValueError, "nonnegative"),
+        (np.array([[0.0, 1.0], [2.0, 0.0]]), ValueError, "symmetric"),
+        (np.array([[1.0, 2.0], [2.0, 1.0]]), ValueError, "zero diagonal"),
+        (np.array([[0 + 0j, 1 + 0j], [1 + 0j, 0 + 0j]]), TypeError, "real"),
+        (np.array([["0", "1"], ["1", "0"]]), TypeError, "real"),
+    ],
+)
+def test_affinity_matrix_rejects_invalid_distances(
+    distances: object,
+    error: type[Exception],
+    message: str,
+) -> None:
+    with pytest.raises(error, match=message):
+        affinity_matrix(cast(Any, distances), n_neighbors=1)
+
+
+@pytest.mark.parametrize("n_neighbors", [0, 2, 1.5, True])
+def test_affinity_matrix_rejects_invalid_neighborhood(n_neighbors: object) -> None:
+    distances = np.array([[0.0, 1.0], [1.0, 0.0]])
+
+    with pytest.raises((TypeError, ValueError)):
+        affinity_matrix(
+            distances,
+            n_neighbors=cast(Any, n_neighbors),
+        )
+
+
+@pytest.mark.parametrize("scale", [0.0, -1.0, np.inf, np.nan, True])
+def test_affinity_matrix_rejects_invalid_scale(scale: object) -> None:
+    distances = np.array([[0.0, 1.0], [1.0, 0.0]])
+
+    with pytest.raises((TypeError, ValueError)):
+        affinity_matrix(
+            distances,
+            n_neighbors=1,
+            scale=cast(Any, scale),
+        )
 
 
 def test_make_affinity_defaults_to_squared_euclidean() -> None:
