@@ -22,7 +22,7 @@
 ```python
 import numpy as np
 
-from snf2 import fuse, make_affinity
+from snf2 import affinity_matrix, fuse, make_affinity
 
 modality_a = np.array(
     [[0.0, 1.0], [0.2, 0.8], [1.0, 0.1], [0.9, 0.2]],
@@ -66,58 +66,26 @@ Metric-specific data requirements follow SciPy. SNF2 raises an error if a
 metric produces non-finite or negative pairwise distances for the supplied
 data.
 
-SNF2 currently provides the two core algorithm stages: constructing an
-affinity matrix from one feature matrix and fusing affinity matrices across
-modalities.
-
-## Usage
+For precomputed distances, use `affinity_matrix` directly:
 
 ```python
-import numpy as np
-
-from snf2 import fuse, make_affinity
-
-modality_a = np.array(
-    [[0.0, 1.0], [0.2, 0.8], [1.0, 0.1], [0.9, 0.2]],
+distances = np.array(
+    [
+        [0.0, 0.3, 1.2, 1.0],
+        [0.3, 0.0, 1.0, 0.8],
+        [1.2, 1.0, 0.0, 0.2],
+        [1.0, 0.8, 0.2, 0.0],
+    ],
 )
-modality_b = np.array(
-    [[1.0, 0.0], [0.8, 0.1], [0.1, 1.0], [0.2, 0.9]],
-)
-
-affinities = [
-    make_affinity(modality_a, n_neighbors=2),
-    make_affinity(modality_b, n_neighbors=2),
-]
-fused_network = fuse(affinities, n_neighbors=2)
-```
-
-Rows are samples and columns are features. SNF2 does not standardize or align
-inputs: callers must preprocess each modality and ensure identical sample
-ordering before constructing affinities.
-
-Affinity construction defaults to squared Euclidean distance and accepts every
-named metric supported by
-[`scipy.spatial.distance.pdist`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html).
-Use `metric_kwargs` for metric-specific arguments:
-
-```python
-correlation_network = make_affinity(
-    modality_a,
-    metric="correlation",
-    n_neighbors=2,
-)
-
-minkowski_network = make_affinity(
-    modality_a,
-    metric="minkowski",
-    metric_kwargs={"p": 3.5},
+precomputed_network = affinity_matrix(
+    distances,
     n_neighbors=2,
 )
 ```
 
-Metric-specific data requirements follow SciPy. SNF2 raises an error if a
-metric produces non-finite or negative pairwise distances for the supplied
-data.
+`affinity_matrix` accepts distances, not similarities. Convert a similarity
+matrix with a transformation appropriate to that measure before calling it;
+for a similarity bounded to `[0, 1]`, that may be `1 - similarity`.
 
 ## Development setup
 
