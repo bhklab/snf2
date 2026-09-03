@@ -42,6 +42,8 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Home</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#citation">Citation</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -74,8 +76,12 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="snf2">SNF2</h1>
-<p>SNF2 is a modern Python implementation of Similarity Network Fusion.</p>
-<p>The initial API separates affinity construction from network fusion:</p>
+<p>SNF2 is a modern Python implementation of Similarity Network Fusion for
+combining multiple data modalities into one sample-similarity network.</p>
+<p>Install SNF2 with Python 3.12 or newer:</p>
+<pre><code class="language-console">pip install snf2
+</code></pre>
+<p>The API separates affinity construction from network fusion:</p>
 <pre><code class="language-python">import numpy as np
 
 from snf2 import affinity_matrix, fuse, make_affinity
@@ -116,6 +122,15 @@ precomputed_network = affinity_matrix(distances, n_neighbors=2)
 Convert similarities with a transformation appropriate to the similarity
 measure first; for a similarity bounded to <code>[0, 1]</code>, that may be
 <code>1 - similarity</code>.</p>
+<h2 id="citation">Citation</h2>
+<blockquote>
+<p>Wang B, Mezlini AM, Demir F, Fiume M, Tu Z, Brudno M, Haibe-Kains B,
+Goldenberg A. Similarity network fusion for aggregating data types on a
+genomic scale. <em>Nature Methods</em>. 2014;11:333–337.
+<a href="https://doi.org/10.1038/nmeth.2810">doi:10.1038/nmeth.2810</a></p>
+</blockquote>
+<p>Implementation provenance and pinned reference versions are documented in the
+<a href="devnotes/">developer notes</a>.</p>
 <p>For setup and development commands, see the
 <a href="https://github.com/bhklab/snf2#readme">project README</a>.</p>
               
@@ -170,5 +185,5 @@ measure first; for a similarity bounded to <code>[0, 1]</code>, that may be
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-09-03 18:24:37.510481+00:00
+Build Date UTC : 2026-09-03 19:03:34.281766+00:00
 -->
