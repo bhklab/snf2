@@ -6,8 +6,10 @@ from typing import cast
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.spatial.distance import pdist, squareform
+from scipy.stats import norm
 
 from snf2._validation import (
+    as_distance_matrix,
     as_feature_matrix,
     validate_n_neighbors,
     validate_positive_float,
@@ -78,9 +80,6 @@ def make_affinity(
     distances = squareform(
         pdist_with_named_metric(matrix, metric=metric, **distance_kwargs)
     )
-    distances = np.asarray((distances + distances.T) / 2, dtype=np.float64)
-    np.fill_diagonal(distances, 0)
-
     if not np.all(np.isfinite(distances)):
         raise ValueError(
             f"metric {metric!r} produced non-finite pairwise distances; "
@@ -89,76 +88,62 @@ def make_affinity(
     if np.any(distances < 0):
         raise ValueError(f"metric {metric!r} produced negative pairwise distances")
 
-    epsilon = np.finfo(np.float64).eps
-    sorted_distances = np.sort(distances, axis=1)
-    neighborhood_means = sorted_distances[:, 1 : neighbors + 1].mean(axis=1) + epsilon
-    local_widths = (
-        neighborhood_means[:, None] + neighborhood_means[None, :] + distances
-    ) / 3 + epsilon
-    local_widths = np.maximum(local_widths, epsilon)
-
-    kernel_widths = kernel_scale * local_widths
-    affinities = np.exp(-(distances**2) / (2 * kernel_widths**2))
-    affinities /= np.sqrt(2 * np.pi) * kernel_widths
-    affinities = np.asarray((affinities + affinities.T) / 2, dtype=np.float64)
-
-    if not np.all(np.isfinite(affinities)):
-        raise ValueError("affinity computation produced non-finite values")
-
-    return affinities
-
+    return affinity_matrix(
+        distances,
+        n_neighbors=neighbors,
+        scale=kernel_scale,
+    )
 
 
 def affinity_matrix(
-    diff: np.ndarray,
+    distances: ArrayLike,
+    *,
     n_neighbors: int = 20,
     scale: float = 0.5,
-) -> np.ndarray:
-    """Construct a similarity/affinity network from a distance matrix.
+) -> NDArray[np.float64]:
+    """Construct an SNF affinity matrix from pairwise distances.
 
     Parameters
     ----------
-    diff : np.ndarray
-        Square pairwise-difference/distance matrix.
-    n_neighbors : int, default=20
-        Number of nearest neighbors used to estimate local scale.
-    scale : float, default=0.5
-        Scaling factor for the Gaussian density.
+    distances
+        Square, finite, nonnegative, symmetric pairwise-distance matrix with a
+        zero diagonal. Similarities must first be converted to distances using
+        a transformation appropriate to the similarity measure.
+    n_neighbors
+        Number of nearest neighbors used to estimate each local scale.
+    scale
+        Positive multiplier applied to the locally estimated kernel width.
 
     Returns
     -------
-    np.ndarray
-        Symmetric affinity matrix.
+    numpy.ndarray
+        A symmetric ``float64`` sample-by-sample affinity matrix.
+
+    Raises
+    ------
+    TypeError
+        If the distances or parameters have incompatible types.
+    ValueError
+        If the distances or parameters have invalid values.
     """
-    diff = np.asarray(diff, dtype=float)
-
-    if diff.ndim != 2 or diff.shape[0] != diff.shape[1]:
-        raise ValueError("diff must be a square matrix")
-
+    diff = as_distance_matrix(distances)
     n = diff.shape[0]
-    eps = np.finfo(float).eps
+    k = validate_n_neighbors(n_neighbors, n)
+    kernel_scale = validate_positive_float(scale, name="scale")
+    eps = np.finfo(np.float64).eps
 
     # Symmetrize and remove self-distances.
-    diff = (diff + diff.T) / 2
+    diff = np.asarray((diff + diff.T) / 2, dtype=np.float64)
     np.fill_diagonal(diff, 0.0)
 
-    # For each column, sort distances and take the first k + 1 values.
-    # The +1 includes the diagonal zero.
-    sorted_columns = np.sort(diff, axis=0)
-
-    if k + 1 > n:
-        raise ValueError(f"k must satisfy k + 1 <= n (got k={k}, n={n})")
-
-    nearest = sorted_columns[:, : k + 1]
+    # For each row, sort distances and take the first k non-self values.
+    sorted_rows = np.sort(diff, axis=1)
+    nearest = sorted_rows[:, 1 : k + 1]
 
     # R's mean(x[is.finite(x)]), applied row-wise.
     finite = np.isfinite(nearest)
     counts = finite.sum(axis=1)
-    means = np.divide(
-        np.where(finite, nearest, 0.0).sum(axis=1),
-        counts,
-        where=counts > 0,
-    )
+    means = np.where(finite, nearest, 0.0).sum(axis=1) / counts
     means += eps
 
     # Equivalent to:
@@ -166,11 +151,16 @@ def affinity_matrix(
     sig = (2.0 / 3.0) * ((means[:, None] + means[None, :]) / 2)
     sig += diff / 3.0
     sig += eps
-
     sig = np.maximum(sig, eps)
 
-    # Gaussian density: dnorm(Diff, mean=0, sd=sigma * Sig)
-    densities = norm.pdf(diff, loc=0.0, scale=scale * sig)
+    # Gaussian density: dnorm(Diff, mean=0, sd=scale * Sig)
+    densities = np.asarray(
+        norm.pdf(diff, loc=0.0, scale=kernel_scale * sig),
+        dtype=np.float64,
+    )
 
     # Ensure the resulting affinity matrix is symmetric.
-    return (densities + densities.T) / 2
+    affinities = np.asarray((densities + densities.T) / 2, dtype=np.float64)
+    if not np.all(np.isfinite(affinities)):
+        raise ValueError("affinity computation produced non-finite values")
+    return affinities
